@@ -1,16 +1,52 @@
+import * as cloudfront from 'aws-cdk-lib/aws-cloudfront';
+import * as origin from 'aws-cdk-lib/aws-cloudfront-origins';
+import * as s3 from 'aws-cdk-lib/aws-s3';
 import * as cdk from 'aws-cdk-lib/core';
 import type { Construct } from 'constructs';
-// import * as sqs from 'aws-cdk-lib/aws-sqs';
 
 export class RecreateKvsStack extends cdk.Stack {
   constructor(scope: Construct, id: string, props?: cdk.StackProps) {
     super(scope, id, props);
 
-    // The code that defines your stack goes here
+    // オリジン用のダミーバケット
+    const originBucket = new s3.Bucket(this, 'OriginBucket', {
+      encryption: s3.BucketEncryption.S3_MANAGED,
+      blockPublicAccess: s3.BlockPublicAccess.BLOCK_ALL,
+      removalPolicy: cdk.RemovalPolicy.DESTROY,
+      autoDeleteObjects: true,
+    });
 
-    // example resource
-    // const queue = new sqs.Queue(this, 'RecreateKvsQueue', {
-    //   visibilityTimeout: cdk.Duration.seconds(300)
-    // });
+    // リダイレクト先を定義したKey-Value Store
+    const keyValueStore = new cloudfront.KeyValueStore(this, 'KeyValueStore', {
+      source: cloudfront.ImportSource.fromInline(
+        JSON.stringify({
+          data: [{ key: 'url', value: 'https://recruite.example.com' }],
+        }),
+      ),
+    });
+
+    const redirectFunction = new cloudfront.Function(this, 'Function', {
+      code: cloudfront.FunctionCode.fromFile({
+        filePath: 'lib/redirect.js',
+      }),
+      keyValueStore,
+      runtime: cloudfront.FunctionRuntime.JS_2_0,
+    });
+
+    const distribution = new cloudfront.Distribution(this, 'Distribution', {
+      defaultBehavior: {
+        origin: origin.S3BucketOrigin.withOriginAccessControl(originBucket),
+        functionAssociations: [
+          {
+            function: redirectFunction,
+            eventType: cloudfront.FunctionEventType.VIEWER_REQUEST,
+          },
+        ],
+      },
+    });
+
+    new cdk.CfnOutput(this, 'KVSCloudFrontDomain', {
+      value: distribution.domainName,
+    });
   }
 }
