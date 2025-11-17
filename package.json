@@ -5,17 +5,23 @@
     "recreate-kvs": "bin/recreate-kvs.js"
   },
   "scripts": {
+    "biome": "biome",
+    "biome:format": "biome format --write",
+    "biome:lint": "biome lint --write",
+    "biome:check": "biome check --write",
     "build": "tsc",
     "watch": "tsc -w",
     "test": "jest",
     "cdk": "cdk"
   },
   "devDependencies": {
+    "@biomejs/biome": "2.3.5",
     "@types/jest": "^29.5.14",
     "@types/node": "22.7.9",
-    "jest": "^29.7.0",
-    "ts-jest": "^29.2.5",
     "aws-cdk": "2.1031.2",
+    "jest": "^29.7.0",
+    "lefthook": "2.0.4",
+    "ts-jest": "^29.2.5",
     "ts-node": "^10.9.2",
     "typescript": "~5.6.3"
   },
