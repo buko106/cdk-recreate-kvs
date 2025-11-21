@@ -25,6 +25,7 @@ export class RecreateKvsStack extends cdk.Stack {
       ),
     });
 
+    // CloudFront Functionでリダイレクト処理
     const redirectFunction = new cloudfront.Function(this, 'Function', {
       code: cloudfront.FunctionCode.fromFile({
         filePath: 'lib/redirect.js',
@@ -33,7 +34,8 @@ export class RecreateKvsStack extends cdk.Stack {
       runtime: cloudfront.FunctionRuntime.JS_2_0,
     });
 
-    const distribution = new cloudfront.Distribution(this, 'Distribution', {
+    // CloudFront ディストリビューションを作成し、Viewer Request イベントでFunctionを関連付け
+    new cloudfront.Distribution(this, 'Distribution', {
       defaultBehavior: {
         origin: origin.S3BucketOrigin.withOriginAccessControl(originBucket),
         functionAssociations: [
@@ -43,10 +45,6 @@ export class RecreateKvsStack extends cdk.Stack {
           },
         ],
       },
-    });
-
-    new cdk.CfnOutput(this, 'KVSCloudFrontDomain', {
-      value: distribution.domainName,
     });
   }
 }
