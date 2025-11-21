@@ -16,13 +16,16 @@ export class RecreateKvsStack extends cdk.Stack {
       autoDeleteObjects: true,
     });
 
-    // リダイレクト先を定義したKey-Value Store
+    // Key-Value Storeのソースデータをインラインで定義（文字列化されたJSONを渡す）
+    const kvsSource = cloudfront.ImportSource.fromInline(
+      JSON.stringify({
+        data: [{ key: 'url', value: 'https://recruite.example.com' }],
+      }),
+    );
+
+    // Key-Value Storeの作成
     const keyValueStore = new cloudfront.KeyValueStore(this, 'KeyValueStore', {
-      source: cloudfront.ImportSource.fromInline(
-        JSON.stringify({
-          data: [{ key: 'url', value: 'https://recruite.example.com' }],
-        }),
-      ),
+      source: kvsSource,
     });
 
     // CloudFront Functionでリダイレクト処理
