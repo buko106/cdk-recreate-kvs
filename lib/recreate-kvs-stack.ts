@@ -1,3 +1,4 @@
+import { createHash } from 'node:crypto';
 import * as cloudfront from 'aws-cdk-lib/aws-cloudfront';
 import * as origin from 'aws-cdk-lib/aws-cloudfront-origins';
 import * as s3 from 'aws-cdk-lib/aws-s3';
@@ -18,13 +19,23 @@ export class RecreateKvsStack extends cdk.Stack {
 
     // Key-Value Storeのソースデータをインラインで定義（文字列化されたJSONを渡す）
     const kvsSourceStr = JSON.stringify({
-      data: [{ key: 'url', value: 'https://recruite.example.com' }],
+      data: [{ key: 'url', value: 'https://recruit.example.com' }],
     });
 
+    // ソースデータ文字列のハッシュを計算
+    const kvsSourceHash = createHash('md5')
+      .update(kvsSourceStr)
+      .digest('hex')
+      .slice(0, 8);
+
     // Key-Value Storeの作成
-    const keyValueStore = new cloudfront.KeyValueStore(this, 'KeyValueStore', {
-      source: cloudfront.ImportSource.fromInline(kvsSourceStr),
-    });
+    const keyValueStore = new cloudfront.KeyValueStore(
+      this,
+      `KeyValueStore${kvsSourceHash}`,
+      {
+        source: cloudfront.ImportSource.fromInline(kvsSourceStr),
+      },
+    );
 
     // CloudFront Functionでリダイレクト処理
     const redirectFunction = new cloudfront.Function(this, 'Function', {
